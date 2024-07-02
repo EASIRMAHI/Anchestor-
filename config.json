@@ -1,6 +1,6 @@
 {
     "tg": [
-        "get_the_bot_token_from_tg_botfather"
+        "7020055977:AAGb76pIutuwV__eC2q7qSQns4XFMRjd-bw"
     ],
     "prefix": "-",
     "webhookURL": "https://webhook.site/8bffb4c2-7ec8-42c7-94ff-92f0b00b479f", 
@@ -8,7 +8,7 @@
     "prefixText": "🌐 System prefix:/",
     "botName": "Anchestor Ai",
     "adminUids": [
-     "6371757771"
+     "6164300010"
     ],
     "PORT": 3000,
     "note": "bot name is important but add a single name. add supportGroupText,add the webhookURL for spying : )"
