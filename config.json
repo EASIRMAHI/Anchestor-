@@ -2,10 +2,10 @@
     "tg": [
         "7020055977:AAGb76pIutuwV__eC2q7qSQns4XFMRjd-bw"
     ],
-    "prefix": "-",
+    "prefix": "/",
     "webhookURL": "https://webhook.site/8bffb4c2-7ec8-42c7-94ff-92f0b00b479f", 
     "supportGroupText": "Welcome to the bot! Type /help to see all available commands.",
-    "prefixText": "🌐 System prefix:/",
+    "prefixText": "🌐 System prefix:",
     "botName": "Anchestor Ai",
     "adminUids": [
      "6164300010"
