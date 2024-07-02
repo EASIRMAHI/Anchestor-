@@ -3,10 +3,10 @@
         "get_the_bot_token_from_tg_botfather"
     ],
     "prefix": "-",
-    "webhookURL": "your_webhookURL", 
-    "supportGroupText": "Welcome to the bot! Type `help to see all available commands.\nJoin the support box to know how to use or how to create these types of bots: https://t.me/+YNKDd9_jIeYxNDQ1",
-    "prefixText": "🌐 System prefix:",
-    "botName": "annie",
+    "webhookURL": "https://webhook.site/8bffb4c2-7ec8-42c7-94ff-92f0b00b479f", 
+    "supportGroupText": "Welcome to the bot! Type /help to see all available commands.",
+    "prefixText": "🌐 System prefix:/",
+    "botName": "Anchestor Ai",
     "adminUids": [
      "6371757771"
     ],
