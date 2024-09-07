@@ -1,37 +1,55 @@
 const axios = require('axios');
 
 module.exports = {
-    config: {
-        name: "alldl",
-        version: "1.0",
-        author: "JARiF",
-        category: "MEDIA",
-        role: 0,
-    },
-    annieStart: async function({ bot, msg }) {
-        try {
-            const link = msg.text.split(' ').slice(1).join(' ');
+  config: {
+    name: "alldl",
+    version: "1.0",
+    author: "JARiF",
+    category: "MEDIA",
+    role: 0,
+  },
+  onStart: async function ({ bot, msg, args }) {
+    try {
+      const url = args.join(" ");
+      if (!url) {
+        return bot.sendMessage(msg.chat.id, "Please provide a URL to download the media.");
+      }
 
-            if (!link) {
-                return bot.sendMessage(msg.chat.id, `Please provide the link to the video.`);
-            }
+      const response = await axios.get(`https://throw-apis.onrender.com/scrape/download?url=${encodeURIComponent(url)}`);
+      const batman = response.data;
 
-            const BASE_URL = `https://noobs-api2.onrender.com/dipto/alldl?url=${link}`;
-            const g = await bot.sendMessage(msg.chat.id, "⬇ | Downloading the video for you");
+      if (!batman.formats || batman.formats.length === 0) {
+        return bot.sendMessage(msg.chat.id, "No formats available for this media.");
+      }
 
-            const res = await axios.get(BASE_URL);
-            const videoUrl = res.data.result;
+      const format = batman.formats[0];
+      const headers = { ...format.headers };
 
-            if (videoUrl) {
-                await bot.sendVideo(msg.chat.id, videoUrl);
-                await bot.deleteMessage(g.chat.id, g.message_id);
-            } else {
-                throw new Error("No video URL found in the response.");
-            }
+      if (format.cookies) {
+        headers['Cookie'] = format.cookies;
+      }
 
-        } catch (error) {
-            console.error("Error occurred:", error);
-            await bot.sendMessage(msg.chat.id, "Sorry, the video could not be downloaded.");
-        }
+      const stream = await axios({
+        method: 'get',
+        url: format.url,
+        headers: headers,
+        responseType: 'stream'
+      });
+
+      await bot.sendMessage(msg.chat.id, 
+        `• Title: ${batman.title}\n` +
+        `• Source: ${batman.source}\n` +
+        `• Duration: ${batman.duration}\n` +
+        `• Format: ${format.format}\n` +
+        `• Quality: ${format.quality}`, 
+        { reply_to_message_id: msg.message_id }
+      );
+
+      await bot.sendVideo(msg.chat.id, { source: stream.data });
+
+    } catch (error) {
+      console.error(error);
+      await bot.sendMessage(msg.chat.id, "An error occurred while trying to download the media.");
     }
-}
+  }
+};
