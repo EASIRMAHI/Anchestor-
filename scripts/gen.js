@@ -2,7 +2,7 @@ const axios = require('axios');
 
 module.exports = {
   config: {
-    name: "generateImage",
+    name: "gen",
     version: "1.0",
     author: "Mahi--",
     category: "AI",
