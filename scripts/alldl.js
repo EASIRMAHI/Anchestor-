@@ -4,7 +4,7 @@ module.exports = {
   config: {
     name: "alldl",
     version: "1.0",
-    author: "JARiF",
+    author: "Mahi--",
     category: "MEDIA",
     role: 0,
   },
