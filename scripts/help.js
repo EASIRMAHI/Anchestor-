@@ -5,7 +5,7 @@ module.exports = {
     config: {
         name: "help",
         version: "1.0",
-        author: "JARiF",
+        author: "Høpéléss mâhî",
         category: "UTILITY",
         role: 0,
     },
@@ -13,13 +13,16 @@ module.exports = {
         const chatId = msg.chat.id;
         const commandName = match ? match[2].trim() : null;
 
-        if (!commandName) {
+        // Check if `-s` flag is included
+        const isDetailed = commandName && commandName.endsWith(' -s');
+        const cleanCommandName = isDetailed ? commandName.slice(0, -3).trim() : commandName;
+
+        if (!cleanCommandName) {
             const categories = {};
             const uncategorized = [];
 
             const scriptFiles = fs.readdirSync(__dirname)
-            .filter(file => file.endsWith('.js') && !file.endsWith('.eg.js') && file !== 'help.js');
-
+                .filter(file => file.endsWith('.js') && !file.endsWith('.eg.js') && file !== 'help.js');
 
             scriptFiles.forEach(file => {
                 const scriptPath = path.join(__dirname, file);
@@ -36,6 +39,7 @@ module.exports = {
 
             let message = '';
             let totalCommands = 0;
+
             for (const category in categories) {
                 message += `╭──『 ${category.toUpperCase()} 』\n`;
                 let commandCount = 0;
@@ -71,29 +75,35 @@ module.exports = {
             message += '╭────────────◊\n';
             message += `│ » Total commands: ${totalCommands}\n`;
             message += '│ » A Powerful Telegram bot\n';
-            message += '│ » By Eijah & JARiF\n';
+            message += '│ » By Høpéléss mâhî\n';
             message += '╰────────◊\n';
-            message += '「 Annie Bot 」';
+            message += '「 Anchestor 👽 」';
 
             bot.sendMessage(chatId, message);
         } else {
-            const scriptPath = path.join(__dirname, `${commandName}.js`);
+            const scriptPath = path.join(__dirname, `${cleanCommandName}.js`);
             if (fs.existsSync(scriptPath)) {
                 const { config } = require(scriptPath);
                 if (config && typeof config === 'object') {
                     const { name, version, author, countDown, role, category } = config;
-                    const message = `Command: ${name}\n` +
+                    let message = `Command: ${name}\n` +
                         `❏ Version: ${version}\n` +
                         `❏ Author: ${author}\n` +
                         `❏ Can use: ${role}\n` +
                         `❏ Category: ${category || 'Uncategorized'}\n`;
 
+                    if (isDetailed) {
+                        // Add more details if `-s` flag is present
+                        message += `❏ Countdown: ${countDown || 'N/A'}\n`;  // Example additional detail
+                        // Add more details here as needed
+                    }
+
                     bot.sendMessage(chatId, message);
                 } else {
-                    bot.sendMessage(chatId, `No config available for ${commandName}.`);
+                    bot.sendMessage(chatId, `No config available for ${cleanCommandName}.`);
                 }
             } else {
-                bot.sendMessage(chatId, `Command ${commandName} not found.`);
+                bot.sendMessage(chatId, `Command ${cleanCommandName} not found.`);
             }
         }
     }
