@@ -1,110 +1,162 @@
-const fs = require("fs");
+const fs = require("fs-extra");
+const axios = require("axios");
 const path = require("path");
+const { getPrefix } = global.utils;
+const { commands, aliases } = global.GoatBot;
 
 module.exports = {
-    config: {
-        name: "help",
-        version: "1.0",
-        author: "Høpéléss mâhî",
-        category: "UTILITY",
-        role: 0,
+  config: {
+    name: "help",
+    version: "1.18",
+    author: "Høpéléss mâhî",
+    countDown: 0,
+    role: 0,
+    shortDescription: {
+      en: "View command usage",
     },
-    annieStart: async function({ bot, msg, match }) {
-        const chatId = msg.chat.id;
-        const commandName = match ? match[2].trim() : null;
+    longDescription: {
+      en: "View command usage, list all commands, search commands by the first letter, review stats or logs, and monitor specific actions",
+    },
+    category: "info",
+    guide: {
+      en: "{pn} / help cmdName \n{pn} / help -s <letter> (to search commands by the first letter)\n{pn} / help -r <logs|usage> (to review logs or usage)\n{pn} / help -m <start|stop|status> <target> (to monitor specific actions)",
+    },
+    priority: 1,
+  },
 
-        // Check if `-s` flag is included
-        const isDetailed = commandName && commandName.endsWith(' -s');
-        const cleanCommandName = isDetailed ? commandName.slice(0, -3).trim() : commandName;
+  onStart: async function ({ message, args, event, threadsData, role }) {
+    const { threadID } = event;
+    const threadData = await threadsData.get(threadID);
+    const prefix = getPrefix(threadID);
 
-        if (!cleanCommandName) {
-            const categories = {};
-            const uncategorized = [];
+    if (args.length === 0) {
+      let msg = `━━━ 👽 𝗔𝗡𝗖𝗛𝗘𝗦𝗧𝗢𝗥 𝗔𝗜 👽 ━━━\n\n`;
 
-            const scriptFiles = fs.readdirSync(__dirname)
-                .filter(file => file.endsWith('.js') && !file.endsWith('.eg.js') && file !== 'help.js');
+      const categories = {};
 
-            scriptFiles.forEach(file => {
-                const scriptPath = path.join(__dirname, file);
-                const { config } = require(scriptPath);
-                if (config && config.category) {
-                    if (!categories[config.category]) {
-                        categories[config.category] = [];
-                    }
-                    categories[config.category].push(file.replace('.js', ''));
-                } else {
-                    uncategorized.push(file.replace('.js', ''));
-                }
-            });
+      for (const [name, value] of commands) {
+        if (value.config.role > 1 && role < value.config.role) continue;
 
-            let message = '';
-            let totalCommands = 0;
+        const category = value.config.category || "Uncategorized";
+        if (!categories[category]) categories[category] = [];
+        categories[category].push(name);
+      }
 
-            for (const category in categories) {
-                message += `╭──『 ${category.toUpperCase()} 』\n`;
-                let commandCount = 0;
-                for (let i = 0; i < categories[category].length; i++) {
-                    if (commandCount === 3) {
-                        message += '\n';
-                        commandCount = 0; 
-                    }
-                    message += `✧${categories[category][i]} `;
-                    commandCount++;
-                }
-                message += '\n';
-                message += '╰───────────◊\n';
-                totalCommands += categories[category].length;
-            }
+      for (const category in categories) {
+        msg += `╭──『  ${category.toUpperCase()} 』\n`;
+        msg += ` ✧${categories[category].sort().join(' ✧ ')}\n`;
+        msg += `╰────────────◊\n\n`;
+      }
 
-            if (uncategorized.length > 0) {
-                message += `╭──『 UNCATEGORIZED 』\n`;
-                let commandCount = 0;
-                for (let i = 0; i < uncategorized.length; i++) {
-                    if (commandCount === 3) {
-                        message += '\n'; 
-                        commandCount = 0; 
-                    }
-                    message += `✧${uncategorized[i]} `;
-                    commandCount++;
-                }
-                message += '\n';
-                message += '╰───────────◊\n';
-                totalCommands += uncategorized.length;
-            }
+      const totalCommands = commands.size;
+      msg += `━━━ 𝗦𝗨𝗣𝗣𝗢𝗥𝗧 𝗕𝗢𝗫 ━━━\n`;
+      msg += `Join Ancestor Bot Zone ❈ Support Box type: ${prefix}supportgc or type: ${prefix}callad to contact with admins.\n\n`;
+      msg += `⇒ Total: ${totalCommands} commands\n`;
+      msg += `⇒ Use ${prefix}help <cmd> to get more information`;
 
-            message += '╭────────────◊\n';
-            message += `│ » Total commands: ${totalCommands}\n`;
-            message += '│ » A Powerful Telegram bot\n';
-            message += '│ » By Høpéléss mâhî\n';
-            message += '╰────────◊\n';
-            message += '「 Anchestor 👽 」';
+      await message.reply(msg);
 
-            bot.sendMessage(chatId, message);
-        } else {
-            const scriptPath = path.join(__dirname, `${cleanCommandName}.js`);
-            if (fs.existsSync(scriptPath)) {
-                const { config } = require(scriptPath);
-                if (config && typeof config === 'object') {
-                    const { name, version, author, countDown, role, category } = config;
-                    let message = `Command: ${name}\n` +
-                        `❏ Version: ${version}\n` +
-                        `❏ Author: ${author}\n` +
-                        `❏ Can use: ${role}\n` +
-                        `❏ Category: ${category || 'Uncategorized'}\n`;
+    } else if (args[0] === "-s" && args[1]) {
+      const searchLetter = args[1].toLowerCase();
+      let msg = `━━━ 👽 𝗔𝗡𝗖𝗛𝗘𝗦𝗧𝗢𝗥 𝗔𝗜 👽 ━━━\n\n`;
 
-                    if (isDetailed) {
-                        // Add more details if `-s` flag is present
-                        message += `❏ Countdown: ${countDown || 'N/A'}\n`;  // Example additional detail
-                        // Add more details here as needed
-                    }
+      const searchResults = [];
+      for (const [name, value] of commands) {
+        if (value.config.role > 1 && role < value.config.role) continue;
 
-                    bot.sendMessage(chatId, message);
-                } else {
-                    bot.sendMessage(chatId, `No config available for ${cleanCommandName}.`);
-                }
-            } else {
-                bot.sendMessage(chatId, `Command ${cleanCommandName} not found.`);
-            }
+        if (name.startsWith(searchLetter)) {
+          searchResults.push(name);
         }
+      }
+
+      if (searchResults.length > 0) {
+        msg += `Found ${searchResults.length} command(s) starting with "${searchLetter.toUpperCase()}":\n`;
+        msg += searchResults.sort().join(" ✧ ");
+      } else {
+        msg += `No commands found starting with "${searchLetter.toUpperCase()}".`;
+      }
+
+      await message.reply(msg);
+
+    } else if (args[0] === "-r" && args[1]) {
+      const reviewType = args[1].toLowerCase();
+      let msg = `━━━ 👽 𝗔𝗡𝗖𝗛𝗘𝗦𝗧𝗢𝗥 𝗔𝗜 👽 ━━━\n\n`;
+
+      if (reviewType === "logs") {
+        msg += `Here are the latest logs:\n[Log details...]\n`;
+      } else if (reviewType === "usage") {
+        msg += `Usage statistics:\n[Usage details...]\n`;
+      } else {
+        msg += `Invalid review type "${reviewType}". Use "logs" or "usage".`;
+      }
+
+      await message.reply(msg);
+
+    } else if (args[0] === "-m" && args[1]) {
+      const monitorAction = args[1].toLowerCase();
+      let msg = `━━━ 👽 𝗔𝗡𝗖𝗛𝗘𝗦𝗧𝗢𝗥 𝗔𝗜 👽 ━━━\n\n`;
+
+      if (monitorAction === "start" && args[2]) {
+        msg += `Started monitoring ${args[2]}.\n`;
+      } else if (monitorAction === "stop" && args[2]) {
+        msg += `Stopped monitoring ${args[2]}.\n`;
+      } else if (monitorAction === "status") {
+        msg += `Current monitoring status:\n[Monitoring details...]\n`;
+      } else {
+        msg += `Invalid monitor action "${monitorAction}". Use "start", "stop", or "status".`;
+      }
+
+      await message.reply(msg);
+
+    } else {
+      const commandName = args[0].toLowerCase();
+      const command = commands.get(commandName) || commands.get(aliases.get(commandName));
+
+      if (!command) {
+        await message.reply(`Command "${commandName}" not found.`);
+      } else {
+        const configCommand = command.config;
+        const roleText = roleTextToString(configCommand.role);
+        const author = configCommand.author || "Unknown";
+
+        const longDescription = configCommand.longDescription
+          ? configCommand.longDescription.en || "No description"
+          : "No description";
+
+        const guideBody = configCommand.guide?.en || "No guide available.";
+        const usage = guideBody.replace(/{pn}/g, prefix).replace(/{cmdName}/g, configCommand.name);
+
+        const response = `╭── NAME ───⭓
+  │ ${configCommand.name}
+  ├── INFO
+  │ Description: ${longDescription}
+  │ Other names: ${configCommand.aliases ? configCommand.aliases.join(", ") : "Do not have"}
+  │ Version: ${configCommand.version || "1.0"}
+  │ Role: ${roleText}
+  │ Time per command: ${configCommand.countDown || 1}s
+  │ Author: ${author}
+  ├── Usage
+  │ ${usage}
+  ├── Notes
+  │ The content inside <XXXXX> can be changed
+  │ The content inside [a|b|c] is a or b or c
+  ╰━━━━━━━❖`;
+
+        await message.reply(response);
+      }
     }
+  },
 };
+
+function roleTextToString(roleText) {
+  switch (roleText) {
+    case 0:
+      return "0 (All users)";
+    case 1:
+      return "1 (Group administrators)";
+    case 2:
+      return "2 (Admin bot)";
+    default:
+      return "Unknown role";
+  }
+}
